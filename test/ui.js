@@ -1,62 +1,29 @@
-// Browser test: several players in separate browser profiles play real hands through a mock of the
-// room capability (presence relayed by this script, 4 KiB limit enforced like the real one).
-// node build.js && node test/ui.js
+// Browser test: several players in separate browser profiles play real hands through a local MQTT
+// broker (same protocol as the public broker the site uses).
+// npm install && node build.js && node test/ui.js
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'dist', 'poker.html'), 'utf8');
-const page = `<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"></head><body>${html}</body></html>`;
-const server = http.createServer((q, r) => { r.setHeader('content-type', 'text/html; charset=utf-8'); r.end(page); });
+const root = path.join(__dirname, '..');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const server = http.createServer((q, r) => { r.setHeader('content-type', 'text/html; charset=utf-8'); r.end(html); });
 
-const MOCK = () => {
-  const me = Math.random().toString(36).slice(2, 10);
-  const rooms = {};
-  window.__presenceErrors = [];
-  window.__deliver = (ch, m) => rooms[ch] && rooms[ch].recv(m);
-  function mk(ch) {
-    const peers = new Map(); let mine = {}; const hs = new Set(); let snap = Object.freeze([]);
-    const fire = () => { snap = Object.freeze([...peers].map(([peer, v]) => Object.freeze({ peer, by: null, isMe: peer === me, sameTab: peer === me, kind: 'viewer', guest: false, presence: v.p, updatedAt: v.t }))); hs.forEach(h => h({ peers: snap, joined: [], left: [], updated: [] })); };
-    peers.set(me, { p: {}, t: Date.now() });
-    const R = {
-      name: ch,
-      recv(m) {
-        if (m.type === 'hello') window.__relay(ch, { type: 'p', peer: me, p: mine });
-        if (m.type === 'p') { peers.set(m.peer, { p: m.p, t: Date.now() }); fire(); }
-        if (m.type === 'bye') { peers.delete(m.peer); fire(); }
-      },
-      async presence(patch) {
-        const next = { ...mine }; for (const k in patch) { if (patch[k] === null) delete next[k]; else next[k] = patch[k]; }
-        const size = new Blob([JSON.stringify(next)]).size;
-        if (size > 4096) { window.__presenceErrors.push(size); throw { code: 'invalid_argument', message: 'presence over 4 KiB: ' + size }; }
-        window.__maxPresence = Math.max(window.__maxPresence || 0, size);
-        mine = JSON.parse(JSON.stringify(next)); peers.set(me, { p: mine, t: Date.now() }); window.__relay(ch, { type: 'p', peer: me, p: mine }); fire();
-      },
-      peers: () => snap,
-      onPeers(h) { hs.add(h); setTimeout(fire, 0); return () => hs.delete(h); },
-      connected: () => true, onConnection(h) { setTimeout(() => h(true)); return () => {}; },
-      async leave() { window.__relay(ch, { type: 'bye', peer: me }); delete rooms[ch]; },
-      async emit() {}, on() { return () => {}; },
-    };
-    rooms[ch] = R; window.__relay(ch, { type: 'hello' });
-    return R;
-  }
-  const lobby = mk('lobby');
-  lobby.join = async n => rooms[n] || mk(n);
-  window.claude = { use: async n => n === 'room' ? lobby : null };
-};
+// local MQTT broker over websockets, standing in for the public one
+const aedes = require('aedes')();
+const { WebSocketServer, createWebSocketStream } = require('ws');
+const wss = new WebSocketServer({ port: 0 });
+wss.on('connection', ws => aedes.handle(createWebSocketStream(ws)));
 
 (async () => {
   await new Promise(r => server.listen(0, r));
+  const broker = `ws://127.0.0.1:${wss.address().port}`;
   const url = `http://127.0.0.1:${server.address().port}/`;
   const browser = await chromium.launch();
   const pages = [];
   const errors = [];
   async function player(name, viewport) {
     const ctx = await browser.newContext({ viewport: viewport || { width: 420, height: 860 } });
-    await ctx.exposeBinding('__relay', async ({ page: src }, ch, m) => {
-      for (const p of pages) if (p !== src) p.evaluate(([c, x]) => window.__deliver && window.__deliver(c, x), [ch, m]).catch(() => {});
-    });
-    await ctx.addInitScript(MOCK);
+    await ctx.addInitScript(b => { window.ANPK_BROKER = b; }, broker);
     const p = await ctx.newPage();
     p.on('pageerror', e => errors.push(name + ': ' + e.message));
     p.on('console', m => { if (m.type() === 'error' && !/fonts\.g/.test(m.text())) errors.push(name + ' console: ' + m.text()); });
@@ -74,8 +41,16 @@ const MOCK = () => {
   const code = (await host.textContent('#gCode')).trim();
   console.log('table code', code);
 
-  const names = ['บี', 'ซี', 'ดี'];
+  const names = ['บี', 'ซี'];
   const others = [];
+  // one friend arrives through the invite link (#code) instead of typing the code
+  {
+    const p = await player('ดี');
+    await p.evaluate(() => localStorage.setItem('pk-name', 'ดี'));
+    await p.goto(url + '#' + code); await p.reload();
+    await p.waitForSelector('#game:not([hidden])', { timeout: 8000 }).catch(() => fail('invite link did not open the table'));
+    others.push(p);
+  }
   for (const n of names) {
     const p = await player(n);
     // the open table shows up in the lobby list
@@ -128,9 +103,6 @@ const MOCK = () => {
   const total = await host.evaluate(() => [...document.querySelectorAll('#dRows tr td:nth-child(2)')].reduce((a, td) => a + +td.textContent.replace(/,/g, ''), 0) + +document.getElementById('pot').textContent.replace(/[^\d]/g, ''));
   console.log('chips on table', total);
 
-  const maxP = await host.evaluate(() => window.__maxPresence), perr = await host.evaluate(() => window.__presenceErrors);
-  console.log('largest host presence', maxP, 'bytes');
-  if (perr.length) fail('presence over limit ' + perr);
 
   // nine players fit inside the presence limit
   const more = [];
@@ -144,11 +116,25 @@ const MOCK = () => {
   console.log('seated after 5 more joined (max 6):', seats);
   if (seats !== 6) fail('max seats not respected: ' + seats);
 
+  // the host reloads the page: the table comes back and play continues
+  const before = await host.textContent('#gBlinds');
+  await host.reload();
+  await host.waitForSelector('#game:not([hidden])', { timeout: 8000 }).catch(() => fail('host did not resume the table'));
+  const until = Date.now() + 40000; let after = before;
+  while (Date.now() < until && after === before) {
+    for (const p of [host, ...others, ...more]) if (await p.isVisible('#actions')) { await p.click('#aCall'); await p.waitForTimeout(150); }
+    if (!(await host.isVisible('.seat.turn')) && await host.isEnabled('#dStart')) await host.click('#dStart').catch(() => {});
+    after = await host.textContent('#gBlinds');
+    await host.waitForTimeout(200);
+  }
+  console.log('after host reload:', before, '->', after);
+  if (after === before) fail('play did not continue after host reload');
+
   await host.screenshot({ path: path.join(__dirname, 'host.png') });
   await others[0].screenshot({ path: path.join(__dirname, 'player.png') });
   await more[0].screenshot({ path: path.join(__dirname, 'waiting.png') });
 
   if (errors.length) { console.log(errors.slice(0, 10).join('\n')); fail('page errors'); }
   console.log(process.exitCode ? 'FAILED' : 'ok');
-  await browser.close(); server.close();
+  await browser.close(); server.close(); wss.close(); aedes.close(); process.exit(process.exitCode || 0);
 })();

@@ -1,5 +1,10 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>โต๊ะโป๊กเกอร์อนันต</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="โป๊กเกอร์เท็กซัสโฮลเด็มออนไลน์กับเพื่อน คนเปิดโต๊ะตั้งชิปของแต่ละคนได้ ใช้ชิปในเกมเท่านั้น">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Sarabun:wght@400;600;700&display=swap">
 <style>
@@ -17,7 +22,8 @@
   --r:10px;
   color-scheme:dark;
 }
-html,body{height:100%}
+html,body{min-height:100%}
+body{margin:0}
 body{background:var(--felt-lo);color:var(--ivory);font-family:var(--f-body);font-size:15px;line-height:1.45;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;
   background-image:radial-gradient(ellipse at 50% 30%,var(--felt-hi),var(--felt) 45%,var(--felt-lo) 100%);background-attachment:fixed;font-variant-numeric:tabular-nums}
@@ -118,7 +124,8 @@ input[type=range]{padding:0;min-height:30px;accent-color:var(--brass);border:0;b
 .banner{background:rgba(231,180,76,.15);border:1px solid rgba(231,180,76,.45);color:var(--ivory);border-radius:10px;padding:10px 12px;font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
-
+</head>
+<body>
 <div class="wrap" id="app">
   <!-- LOBBY -->
   <section id="lobby" class="wrap">
@@ -127,7 +134,7 @@ input[type=range]{padding:0;min-height:30px;accent-color:var(--brass);border:0;b
       <h1>โต๊ะโป๊กเกอร์<span>อนันต</span></h1>
       <p class="note">เปิดโต๊ะ ตั้งบลายด์ และกำหนดชิปของผู้เล่นแต่ละคนได้เอง ชวนเพื่อนเข้าด้วยรหัสโต๊ะ 5 ตัว เล่นได้ 2–9 คน</p>
     </header>
-    <div id="offline" class="banner" hidden>หน้านี้ยังต่อห้องออนไลน์ไม่ได้ เปิดจากลิงก์บน claude.ai ที่เจ้าของแชร์ให้ แล้วลงชื่อเข้าใช้ เพื่อเล่นกับคนอื่น</div>
+    <div id="offline" class="banner" hidden>กำลังต่อเซิร์ฟเวอร์เกม… ถ้านานเกิน 10 วินาที ลองเช็กอินเทอร์เน็ตแล้วรีเฟรชหน้า</div>
     <div class="panel">
       <label for="nick">ชื่อที่จะแสดงบนโต๊ะ
         <input id="nick" maxlength="12" placeholder="เช่น ต้น, มายด์" autocomplete="nickname">
@@ -164,7 +171,7 @@ input[type=range]{padding:0;min-height:30px;accent-color:var(--brass);border:0;b
         <div id="myHosted" class="tables"></div>
       </div>
     </div>
-    <p class="note">เครื่องของคนเปิดโต๊ะเป็นคนสับและแจกไพ่ ไพ่ในมือส่งถึงแต่ละคนแบบเข้ารหัส คนอื่นบนโต๊ะเห็นไม่ได้ ถ้าคนเปิดโต๊ะปิดหน้านี้ เกมจะหยุดรอจนเขากลับมา</p>
+    <p class="note">ไม่ต้องสมัครสมาชิก ส่งลิงก์เชิญให้เพื่อนก็เข้าโต๊ะได้เลย เครื่องของคนเปิดโต๊ะเป็นคนสับและแจกไพ่ ไพ่ในมือส่งถึงแต่ละคนแบบเข้ารหัส คนอื่นบนโต๊ะเห็นไม่ได้ ถ้าคนเปิดโต๊ะปิดหน้านี้ เกมจะหยุดรอจนเขากลับมา</p>
   </section>
 
   <!-- TABLE -->
@@ -173,7 +180,7 @@ input[type=range]{padding:0;min-height:30px;accent-color:var(--brass);border:0;b
       <div class="t-name"><span class="eyebrow" id="gBlinds"></span><h2 id="gName"></h2></div>
       <div class="row" style="flex:0 0 auto;align-items:center">
         <span class="muted">รหัส <span class="code" id="gCode"></span></span>
-        <button class="btn-ghost mini" id="copyCode" type="button">คัดลอกรหัส</button>
+        <button class="btn-brass mini" id="copyCode" type="button">คัดลอกลิงก์เชิญ</button>
         <button class="btn-ghost mini" id="leaveBtn" type="button">ออกจากโต๊ะ</button>
       </div>
     </div>
@@ -235,6 +242,10 @@ input[type=range]{padding:0;min-height:30px;accent-color:var(--brass);border:0;b
 </div>
 
 <script>
+/*MQTT*/
+</script>
+<script>
+/*NET*/
 /*ENGINE*/
 </script>
 <script>
@@ -250,6 +261,8 @@ const store = {
   keys() { try { return Object.keys(localStorage); } catch (e) { return []; } },
 };
 const rid = n => { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = ''; const r = crypto.getRandomValues(new Uint32Array(n)); for (const x of r) s += a[x % a.length]; return s; };
+const BROKER = window.ANPK_BROKER || 'wss://broker.emqx.io:8084/mqtt';
+const inviteLink = c => location.origin + location.pathname + '#' + c;
 const rnd = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
 
 // ---------- identity + keys ----------
@@ -297,11 +310,19 @@ $('nick').addEventListener('change', () => { store.set('pk-name', nick()); if (t
 
 async function boot() {
   await loadKeys();
-  try { room = window.claude && window.claude.use ? await window.claude.use('room') : null; } catch (e) { room = null; }
+  try { room = createNet(BROKER); } catch (e) { room = null; }
   if (!room) { $('offline').hidden = false; $('createBtn').disabled = true; return; }
-  room.onPeers(renderLobby, () => { $('offline').hidden = false; });
+  let offTimer = setTimeout(() => { $('offline').hidden = false; }, 2500);
+  room.onConnection(on => { clearTimeout(offTimer); if (on) $('offline').hidden = true; else offTimer = setTimeout(() => { $('offline').hidden = false; }, 2500); });
+  room.onPeers(renderLobby);
   lobbyReady = true;
   renderHosted();
+  const hashCode = (location.hash || '').slice(1).toLowerCase();
+  if (/^[a-z0-9]{5}$/.test(hashCode)) {
+    $('jCode').value = hashCode;
+    if ($('nick').value.trim()) return enter(hashCode);
+    $('joinErr').textContent = 'ใส่ชื่อของคุณด้านบน แล้วกด “เข้าโต๊ะ”'; $('nick').focus(); return;
+  }
   const resume = store.get('pk-at');
   if (resume) { try { const r = JSON.parse(resume); if (r.host && store.get('pk-host-' + r.code)) resumeHost(r.code); else if (r.code) enter(r.code); } catch (e) {} }
 }
@@ -360,7 +381,7 @@ function makeHost(meta, t) {
       lg: h ? h.log.slice(-5) : [],
       ep: H.ep, ek: live ? H.ek : {},
       rs: h && h.done && h.result ? { w: h.result.winners, sh: Object.fromEntries(Object.entries(h.result.shown).map(([k, v]) => [k, [v.hole.join(''), v.name]])) } : null,
-      v: ++H.ver,
+      v: H.ver = Math.max(H.ver + 1, Date.now()),
     };
     // keep the host's presence inside the room's 4 KiB limit
     const size = () => new Blob([JSON.stringify(s)]).size;
@@ -459,6 +480,7 @@ async function joinTable(c) {
   try { table = await room.join('pk-' + c); }
   catch (e) { $('joinErr').textContent = e && e.code === 'limit_reached' ? 'เปิดโต๊ะพร้อมกันเยอะเกินไป ออกจากโต๊ะอื่นก่อน' : 'เข้าโต๊ะไม่ได้ ลองอีกครั้ง'; return; }
   store.set('pk-at', JSON.stringify({ code: c, host: !!host }));
+  try { history.replaceState(null, '', '#' + c); } catch (e) {}
   $('lobby').hidden = true; $('game').hidden = false; $('gCode').textContent = c;
   hostSeenAt = Date.now();
   unsubTable = table.onPeers(onTablePeers, () => { $('gBanner').hidden = false; $('gBanner').textContent = 'หลุดจากโต๊ะ ลองออกแล้วเข้าใหม่'; });
@@ -477,6 +499,7 @@ async function leaveTable() {
   if (room && host) room.presence({ tb: null }).catch(() => {});
   table = null; view = null; host = null; code = ''; myCards = null; myCardsFor = '';
   store.del('pk-at');
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
   $('game').hidden = true; $('lobby').hidden = false; renderHosted(); renderLobby();
 }
 
@@ -731,9 +754,19 @@ $('joinForm').onsubmit = e => {
   enter($('jCode').value);
 };
 $('leaveBtn').onclick = leaveTable;
-$('copyCode').onclick = async () => { try { await navigator.clipboard.writeText(code); $('copyCode').textContent = 'คัดลอกแล้ว'; } catch (e) { $('copyCode').textContent = code; } setTimeout(() => $('copyCode').textContent = 'คัดลอกรหัส', 1500); };
+$('copyCode').onclick = async () => {
+  const link = inviteLink(code);
+  try {
+    if (navigator.share && matchMedia('(pointer:coarse)').matches) { await navigator.share({ title: 'มาเล่นโป๊กเกอร์กัน', text: 'เข้าโต๊ะ ' + code, url: link }); return; }
+    await navigator.clipboard.writeText(link); $('copyCode').textContent = 'คัดลอกแล้ว';
+  } catch (e) { $('copyCode').textContent = link; }
+  setTimeout(() => $('copyCode').textContent = 'คัดลอกลิงก์เชิญ', 2500);
+};
+window.addEventListener('hashchange', () => { const c = (location.hash || '').slice(1).toLowerCase(); if (/^[a-z0-9]{5}$/.test(c) && c !== code && !table) { $('jCode').value = c; if ($('nick').value.trim()) enter(c); } });
 window.addEventListener('resize', () => renderSeats(view));
 
 boot();
 })();
 </script>
+</body>
+</html>
