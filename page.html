@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>โต๊ะโป๊กเกอร์อนันต</title>
+<meta name="description" content="โป๊กเกอร์เท็กซัสโฮลเด็มออนไลน์กับเพื่อน คนเปิดโต๊ะตั้งชิปของแต่ละคนได้ ใช้ชิปในเกมเท่านั้น">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Sarabun:wght@400;600;700&display=swap">
+<style>
+/* Layout: one felt table that fills the phone; lobby and host desk are panels laid over the same felt.
+   Single look on purpose (a card room is always lit the same way), so every colour is set here. */
+:root{
+  --felt:#0e3a35; --felt-hi:#17564e; --felt-lo:#082824;
+  --rail:#2b1e15; --rail-hi:#4a3423;
+  --ivory:#f2ead8; --ivory-dim:#c9c1ae; --muted:#8fb3aa;
+  --brass:#d0a748; --brass-lo:#9a7a2c;
+  --red:#c8452f; --ink:#0a1312; --card:#fbf8f1; --card-red:#b8321f; --card-black:#18201f;
+  --ok:#6cc79a; --warn:#e7b44c;
+  --f-display:"Chakra Petch","Sarabun",system-ui,sans-serif;
+  --f-body:"Sarabun",system-ui,sans-serif;
+  --r:10px;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+body{margin:0}
+body{background:var(--felt-lo);color:var(--ivory);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;
+  background-image:radial-gradient(ellipse at 50% 30%,var(--felt-hi),var(--felt) 45%,var(--felt-lo) 100%);background-attachment:fixed;font-variant-numeric:tabular-nums}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:8px;padding:.6em 1em;background:var(--rail-hi);color:var(--ivory);font-weight:600;min-height:42px}
+button:hover:not(:disabled){filter:brightness(1.15)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.btn-brass{background:var(--brass);color:var(--ink)}
+.btn-red{background:var(--red);color:var(--ivory)}
+.btn-ghost{background:transparent;border:1px solid rgba(242,234,216,.25)}
+input,select{background:var(--felt-lo);border:1px solid rgba(242,234,216,.22);border-radius:8px;padding:.55em .7em;min-height:42px;width:100%}
+label{display:grid;gap:4px;font-size:13px;color:var(--ivory-dim)}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:14px}
+.panel{background:rgba(8,20,18,.72);border:1px solid rgba(208,167,72,.25);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.row>*{flex:1 1 120px;min-width:0}
+.eyebrow{font-family:var(--f-display);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+.muted{color:var(--muted);font-size:13px}
+.note{font-size:13px;color:var(--muted);margin:0}
+.err{color:#ffb4a6;font-size:13px;min-height:1em;margin:0}
+
+/* lobby */
+.hero{display:grid;gap:6px;padding-block:6px 2px}
+.hero h1{font-size:clamp(28px,7vw,44px);line-height:1.05}
+.hero h1 span{color:var(--brass)}
+.lobby-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.tables{display:grid;gap:8px}
+.tbl-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(242,234,216,.06)}
+.tbl-row b{font-family:var(--f-display)}
+.code{font-family:var(--f-display);letter-spacing:.18em;font-weight:700}
+
+/* table */
+.topbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.topbar .t-name{display:grid;gap:0}
+.topbar h2{font-size:20px}
+.felt{position:relative;width:100%;aspect-ratio:1.55/1;max-height:62vh;margin:34px auto 30px}
+@media (max-width:640px){.felt{aspect-ratio:.82/1;max-height:none}}
+.oval{position:absolute;inset:9% 7%;border-radius:999px;background:radial-gradient(ellipse at 50% 40%,var(--felt-hi),var(--felt) 70%);
+  box-shadow:0 0 0 12px var(--rail),0 0 0 14px var(--rail-hi),0 18px 40px rgba(0,0,0,.55),inset 0 0 40px rgba(0,0,0,.35)}
+.center{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);display:grid;gap:8px;justify-items:center;width:70%}
+.board{display:flex;gap:5px;justify-content:center;min-height:62px}
+.pot{font-family:var(--f-display);font-size:15px;background:rgba(0,0,0,.35);padding:3px 12px;border-radius:999px;color:var(--brass)}
+.status{font-size:13px;color:var(--ivory-dim);text-align:center;min-height:1.2em}
+.seat{position:absolute;transform:translate(-50%,-50%);width:clamp(84px,22vw,124px);display:grid;justify-items:center;gap:3px;text-align:center;transition:opacity .2s}
+.seat .plate{width:100%;background:rgba(8,18,16,.88);border:1px solid rgba(242,234,216,.18);border-radius:10px;padding:4px 6px;display:grid;gap:0}
+.seat .nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seat .stk{font-family:var(--f-display);font-size:14px;color:var(--brass)}
+.seat.turn .plate{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass),0 0 18px rgba(208,167,72,.5)}
+.seat.folded{opacity:.45}
+.seat.out{opacity:.35}
+.seat.me .plate{background:rgba(23,86,78,.95)}
+.seat .tag{font-size:11px;color:var(--ink);background:var(--ivory-dim);border-radius:999px;padding:0 7px;font-weight:700}
+.seat .tag.win{background:var(--ok)}
+.seat .bet{font-family:var(--f-display);font-size:12px;color:var(--ivory);display:flex;align-items:center;gap:4px}
+.chip{width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:inset 0 0 0 2px var(--card),inset 0 0 0 3px var(--red)}
+.btn-dot{position:absolute;top:-6px;right:-4px;width:20px;height:20px;border-radius:50%;background:var(--card);color:var(--ink);font:700 11px/20px var(--f-display);text-align:center}
+.hole{display:flex;gap:3px}
+.hand-name{font-size:11px;color:var(--ok);font-weight:700}
+
+.card{width:40px;height:56px;border-radius:5px;background:var(--card);color:var(--card-black);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:17px;line-height:1;box-shadow:0 2px 4px rgba(0,0,0,.4);position:relative}
+.card .s{font-size:16px;display:block;text-align:center}
+.card.red{color:var(--card-red)}
+.card.back{background:repeating-linear-gradient(45deg,var(--red) 0 4px,#9b3020 4px 8px);box-shadow:inset 0 0 0 3px var(--card),0 2px 4px rgba(0,0,0,.4)}
+.card.sm{width:28px;height:40px;font-size:13px}
+.card.sm .s{font-size:12px}
+.card.hl{outline:2px solid var(--ok);outline-offset:1px}
+.card.empty{background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1px rgba(242,234,216,.15)}
+@media (max-width:640px){.card{width:34px;height:48px;font-size:15px}.card .s{font-size:14px}}
+
+.mine{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.mine .card{width:58px;height:82px;font-size:24px}
+.mine .card .s{font-size:22px}
+.actions{display:grid;gap:10px}
+.act-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.act-row button{min-height:50px;font-size:16px}
+.raise{display:grid;gap:8px}
+.raise .presets{display:flex;gap:6px;flex-wrap:wrap}
+.raise .presets button{flex:1 1 60px;min-height:36px;padding:.3em .5em;font-size:13px}
+input[type=range]{padding:0;min-height:30px;accent-color:var(--brass);border:0;background:transparent}
+.log{font-size:13px;color:var(--ivory-dim);display:grid;gap:2px;max-height:160px;overflow:auto}
+
+/* host desk */
+.desk table{width:100%;border-collapse:collapse;font-size:14px}
+.desk th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:4px}
+.desk td{padding:5px 4px;border-top:1px solid rgba(242,234,216,.08);vertical-align:middle}
+.desk td input{min-height:34px;padding:.3em .5em;width:110px}
+.desk .tb-wrap{overflow-x:auto}
+.desk .mini{min-height:34px;padding:.3em .7em;font-size:13px}
+.pill{font-size:11px;border-radius:999px;padding:1px 8px;background:rgba(242,234,216,.12)}
+.pill.on{background:rgba(108,199,154,.25);color:var(--ok)}
+.pill.off{background:rgba(231,180,76,.2);color:var(--warn)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ivory)}
+.toggle input{width:auto;min-height:0}
+.banner{background:rgba(231,180,76,.15);border:1px solid rgba(231,180,76,.45);color:var(--ivory);border-radius:10px;padding:10px 12px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <!-- LOBBY -->
+  <section id="lobby" class="wrap">
+    <header class="hero">
+      <div class="eyebrow">No-Limit Texas Hold'em · ชิปในเกมเท่านั้น</div>
+      <h1>โต๊ะโป๊กเกอร์<span>อนันต</span></h1>
+      <p class="note">เปิดโต๊ะ ตั้งบลายด์ และกำหนดชิปของผู้เล่นแต่ละคนได้เอง ชวนเพื่อนเข้าด้วยรหัสโต๊ะ 5 ตัว เล่นได้ 2–9 คน</p>
+    </header>
+    <div id="offline" class="banner" hidden>กำลังต่อเซิร์ฟเวอร์เกม… ถ้านานเกิน 10 วินาที ลองเช็กอินเทอร์เน็ตแล้วรีเฟรชหน้า</div>
+    <div class="panel">
+      <label for="nick">ชื่อที่จะแสดงบนโต๊ะ
+        <input id="nick" maxlength="12" placeholder="เช่น ต้น, มายด์" autocomplete="nickname">
+      </label>
+    </div>
+    <div class="lobby-grid">
+      <form class="panel" id="createForm">
+        <div class="eyebrow">เปิดโต๊ะใหม่</div>
+        <label for="cName">ชื่อโต๊ะ<input id="cName" maxlength="20" value="โต๊ะคืนวันศุกร์"></label>
+        <div class="row">
+          <label for="cSb">บลายด์เล็ก<input id="cSb" type="number" min="1" value="10" inputmode="numeric"></label>
+          <label for="cBb">บลายด์ใหญ่<input id="cBb" type="number" min="2" value="20" inputmode="numeric"></label>
+        </div>
+        <div class="row">
+          <label for="cStack">ชิปเริ่มต้นต่อคน<input id="cStack" type="number" min="1" value="2000" inputmode="numeric"></label>
+          <label for="cMax">ที่นั่งสูงสุด
+            <select id="cMax"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option></select>
+          </label>
+        </div>
+        <label class="toggle" for="cAuto"><input id="cAuto" type="checkbox" checked> ให้คนที่เข้ามานั่งได้ทันทีด้วยชิปเริ่มต้น</label>
+        <p class="note">หลังเปิดโต๊ะ คุณแก้ชิปของแต่ละคนได้ที่แผงเจ้ามือ ระหว่างมือที่จบแล้ว</p>
+        <p class="err" id="createErr"></p>
+        <button class="btn-brass" type="submit" id="createBtn">เปิดโต๊ะ</button>
+      </form>
+      <div class="panel">
+        <div class="eyebrow">เข้าโต๊ะ</div>
+        <form class="row" id="joinForm">
+          <label for="jCode">รหัสโต๊ะ<input id="jCode" maxlength="5" placeholder="เช่น k7p2x" autocapitalize="off" autocomplete="off" class="code"></label>
+          <button type="submit" style="flex:0 0 auto">เข้าโต๊ะ</button>
+        </form>
+        <p class="err" id="joinErr"></p>
+        <div class="eyebrow" style="margin-top:6px">โต๊ะที่เปิดอยู่ตอนนี้</div>
+        <div class="tables" id="openTables"><p class="note">ยังไม่มีใครเปิดโต๊ะ เปิดเองได้เลยทางซ้าย</p></div>
+        <div id="myHosted" class="tables"></div>
+      </div>
+    </div>
+    <p class="note">ไม่ต้องสมัครสมาชิก ส่งลิงก์เชิญให้เพื่อนก็เข้าโต๊ะได้เลย เครื่องของคนเปิดโต๊ะเป็นคนสับและแจกไพ่ ไพ่ในมือส่งถึงแต่ละคนแบบเข้ารหัส คนอื่นบนโต๊ะเห็นไม่ได้ ถ้าคนเปิดโต๊ะปิดหน้านี้ เกมจะหยุดรอจนเขากลับมา</p>
+  </section>
+
+  <!-- TABLE -->
+  <section id="game" class="wrap" hidden>
+    <div class="topbar">
+      <div class="t-name"><span class="eyebrow" id="gBlinds"></span><h2 id="gName"></h2></div>
+      <div class="row" style="flex:0 0 auto;align-items:center">
+        <span class="muted">รหัส <span class="code" id="gCode"></span></span>
+        <button class="btn-brass mini" id="copyCode" type="button">คัดลอกลิงก์เชิญ</button>
+        <button class="btn-ghost mini" id="leaveBtn" type="button">ออกจากโต๊ะ</button>
+      </div>
+    </div>
+    <div id="gBanner" class="banner" hidden></div>
+    <div class="felt" id="felt">
+      <div class="oval"></div>
+      <div class="center">
+        <div class="board" id="board"></div>
+        <div class="pot" id="pot">พอต 0</div>
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+    <div class="panel" id="myPanel">
+      <div class="mine" id="mine"></div>
+      <div class="actions" id="actions" hidden>
+        <div class="act-row">
+          <button class="btn-red" id="aFold" type="button">หมอบ</button>
+          <button id="aCall" type="button">เช็ค</button>
+          <button class="btn-brass" id="aRaise" type="button">เรส</button>
+        </div>
+        <div class="raise" id="raiseBox">
+          <div class="row" style="align-items:center">
+            <input type="range" id="rSlider" style="flex:3 1 160px">
+            <input type="number" id="rAmt" inputmode="numeric" style="flex:1 1 90px" aria-label="ยอดเรส">
+          </div>
+          <div class="presets">
+            <button type="button" class="btn-ghost" data-p="min">ขั้นต่ำ</button>
+            <button type="button" class="btn-ghost" data-p="half">½ พอต</button>
+            <button type="button" class="btn-ghost" data-p="pot">พอต</button>
+            <button type="button" class="btn-ghost" data-p="all">ออลอิน</button>
+          </div>
+        </div>
+      </div>
+      <div class="row" id="seatCtl" style="align-items:center"></div>
+    </div>
+    <div class="panel desk" id="desk" hidden>
+      <div class="row" style="align-items:center">
+        <div class="eyebrow" style="flex:1 1 auto">แผงเจ้ามือ</div>
+        <label class="toggle" for="dAutoNext" style="flex:0 0 auto"><input id="dAutoNext" type="checkbox" checked> เริ่มมือถัดไปเอง</label>
+        <button class="btn-brass" id="dStart" type="button" style="flex:0 0 auto">แจกมือใหม่</button>
+      </div>
+      <p class="note" id="dNote"></p>
+      <div class="tb-wrap"><table>
+        <thead><tr><th>ผู้เล่น</th><th>ชิป</th><th>ตั้งชิป</th><th></th></tr></thead>
+        <tbody id="dRows"></tbody>
+      </table></div>
+      <div id="dWait"></div>
+      <div class="row">
+        <label for="dSb">บลายด์เล็ก<input id="dSb" type="number" min="1" inputmode="numeric"></label>
+        <label for="dBb">บลายด์ใหญ่<input id="dBb" type="number" min="2" inputmode="numeric"></label>
+        <label for="dStack">ชิปเริ่มต้นคนใหม่<input id="dStack" type="number" min="1" inputmode="numeric"></label>
+        <button type="button" id="dSave" style="flex:0 0 auto">บันทึก</button>
+      </div>
+      <label class="toggle" for="dAuto"><input id="dAuto" type="checkbox"> ให้คนที่เข้ามานั่งได้ทันที</label>
+      <p class="err" id="dErr"></p>
+    </div>
+    <div class="panel"><div class="eyebrow">บันทึกมือนี้</div><div class="log" id="log"></div></div>
+  </section>
+</div>
+
+<script>
+/*MQTT*/
+</script>
+<script>
+/*NET*/
+/*ENGINE*/
+</script>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const SUIT = { s: '♠', h: '♥', d: '♦', c: '♣' };
+const fmt = n => (n || 0).toLocaleString('th-TH');
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+  keys() { try { return Object.keys(localStorage); } catch (e) { return []; } },
+};
+const rid = n => { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = ''; const r = crypto.getRandomValues(new Uint32Array(n)); for (const x of r) s += a[x % a.length]; return s; };
+const BROKER = window.ANPK_BROKER || 'wss://broker.emqx.io:8084/mqtt';
+const inviteLink = c => location.origin + location.pathname + '#' + c;
+const rnd = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
+
+// ---------- identity + keys ----------
+let PID = store.get('pk-pid'); if (!PID) { PID = rid(12); store.set('pk-pid', PID); }
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+let myKeys = null, myPub = '';
+async function loadKeys() {
+  const EC = { name: 'ECDH', namedCurve: 'P-256' };
+  try {
+    const saved = JSON.parse(store.get('pk-key') || 'null');
+    if (saved) {
+      myKeys = { privateKey: await crypto.subtle.importKey('jwk', saved.priv, EC, true, ['deriveKey']) };
+      myPub = saved.pub; return;
+    }
+  } catch (e) {}
+  const kp = await crypto.subtle.generateKey(EC, true, ['deriveKey']);
+  myKeys = kp; myPub = b64(await crypto.subtle.exportKey('raw', kp.publicKey));
+  store.set('pk-key', JSON.stringify({ priv: await crypto.subtle.exportKey('jwk', kp.privateKey), pub: myPub }));
+}
+async function aesFor(priv, pubB64) {
+  const pub = await crypto.subtle.importKey('raw', unb64(pubB64), { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  return crypto.subtle.deriveKey({ name: 'ECDH', public: pub }, priv, { name: 'AES-GCM', length: 128 }, false, ['encrypt', 'decrypt']);
+}
+async function seal(priv, pubB64, text) {
+  const k = await aesFor(priv, pubB64), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, new TextEncoder().encode(text)));
+  const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return b64(out);
+}
+async function unseal(priv, pubB64, data) {
+  const k = await aesFor(priv, pubB64), raw = unb64(data);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: raw.slice(0, 12) }, k, raw.slice(12)));
+}
+
+// ---------- room ----------
+let room = null, lobbyReady = false;
+let table = null;          // NamedRoom of the table we sit at
+let view = null;           // latest public state from the host
+let code = '';
+let host = null;           // host engine when we run this table
+let lastAct = 0;
+const nick = () => ($('nick').value.trim() || 'ผู้เล่น').slice(0, 12);
+$('nick').value = store.get('pk-name') || '';
+$('nick').addEventListener('change', () => { store.set('pk-name', nick()); if (table) myPresence(); if (host) { const s = host.t.seats.find(s => s.id === PID); if (s) { s.name = nick(); host.changed(); } } });
+
+async function boot() {
+  await loadKeys();
+  try { room = createNet(BROKER); } catch (e) { room = null; }
+  if (!room) { $('offline').hidden = false; $('createBtn').disabled = true; return; }
+  let offTimer = setTimeout(() => { $('offline').hidden = false; }, 2500);
+  room.onConnection(on => { clearTimeout(offTimer); if (on) $('offline').hidden = true; else offTimer = setTimeout(() => { $('offline').hidden = false; }, 2500); });
+  room.onPeers(renderLobby);
+  lobbyReady = true;
+  renderHosted();
+  const hashCode = (location.hash || '').slice(1).toLowerCase();
+  if (/^[a-z0-9]{5}$/.test(hashCode)) {
+    $('jCode').value = hashCode;
+    if ($('nick').value.trim()) return enter(hashCode);
+    $('joinErr').textContent = 'ใส่ชื่อของคุณด้านบน แล้วกด “เข้าโต๊ะ”'; $('nick').focus(); return;
+  }
+  const resume = store.get('pk-at');
+  if (resume) { try { const r = JSON.parse(resume); if (r.host && store.get('pk-host-' + r.code)) resumeHost(r.code); else if (r.code) enter(r.code); } catch (e) {} }
+}
+
+function renderLobby() {
+  const list = $('openTables'), seen = new Map();
+  for (const p of room.peers()) { const tb = p.presence && p.presence.tb; if (tb && typeof tb.c === 'string' && /^[a-z0-9]{5}$/.test(tb.c)) seen.set(tb.c, tb); }
+  list.replaceChildren();
+  if (!seen.size) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'ยังไม่มีใครเปิดโต๊ะ เปิดเองได้เลย'; list.append(p); return; }
+  for (const tb of seen.values()) {
+    const row = document.createElement('div'); row.className = 'tbl-row';
+    const info = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = String(tb.n || 'โต๊ะ').slice(0, 20);
+    const m = document.createElement('div'); m.className = 'muted'; m.textContent = `บลายด์ ${fmt(tb.sb)}/${fmt(tb.bb)} · ${tb.p || 0}/${tb.m || 9} คน`;
+    info.append(b, m);
+    const btn = document.createElement('button'); btn.textContent = 'เข้า'; btn.type = 'button'; btn.onclick = () => enter(tb.c);
+    row.append(info, btn); list.append(row);
+  }
+}
+function renderHosted() {
+  const box = $('myHosted'); box.replaceChildren();
+  const mine = store.keys().filter(k => k.startsWith('pk-host-'));
+  if (!mine.length) return;
+  const h = document.createElement('div'); h.className = 'eyebrow'; h.style.marginTop = '6px'; h.textContent = 'โต๊ะที่คุณเปิดไว้'; box.append(h);
+  for (const k of mine) {
+    let d; try { d = JSON.parse(store.get(k)); } catch (e) { continue; }
+    const row = document.createElement('div'); row.className = 'tbl-row';
+    const t = document.createElement('div'); t.textContent = `${d.meta.name} · `; const c = document.createElement('span'); c.className = 'code'; c.textContent = d.meta.code; t.append(c);
+    const go = document.createElement('button'); go.type = 'button'; go.textContent = 'กลับไปคุมโต๊ะ'; go.onclick = () => resumeHost(d.meta.code);
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'btn-ghost'; del.textContent = 'ปิดโต๊ะ'; del.onclick = () => { store.del(k); renderHosted(); };
+    const btns = document.createElement('div'); btns.className = 'row'; btns.style.flex = '0 0 auto'; btns.append(go, del);
+    row.append(t, btns); box.append(row);
+  }
+}
+
+// ---------- host ----------
+function makeHost(meta, t) {
+  const H = { meta, t, lastQ: meta.lastQ || {}, ep: meta.ep || '', ek: meta.ek || {}, ver: 0, absentSince: {}, nextAt: 0, busy: false };
+  H.save = () => { meta.lastQ = H.lastQ; meta.ep = H.ep; meta.ek = H.ek; store.set('pk-host-' + meta.code, JSON.stringify({ meta, t })); };
+  H.players = () => { // who is in the room right now, from their presence
+    const m = new Map();
+    if (table) for (const p of table.peers()) { const pr = p.presence || {}; if (typeof pr.pid === 'string' && typeof pr.k === 'string') m.set(pr.pid, { name: String(pr.n || 'ผู้เล่น').slice(0, 12), pub: pr.k, sit: !pr.so, a: pr.a }); }
+    return m;
+  };
+  H.changed = () => { H.save(); H.publish(); renderAll(); };
+  H.seatOf = pid => t.seats.findIndex(s => s.id === pid);
+  H.publicState = () => {
+    const h = t.hand, live = h && !h.done, o = live ? Poker.options(t) : null;
+    const inHand = {}; if (h) h.players.forEach(p => inHand[p.seat] = p);
+    const s = {
+      c: meta.code, nm: meta.name, sb: t.sb, bb: t.bb, mx: meta.max, au: meta.auto ? 1 : 0, hn: h ? h.no : 0, btn: t.button,
+      st: h ? h.street : 0, bd: h ? h.board : [], cb: h ? h.curBet : 0, ta: o ? o.seat : -1, dn: h ? (h.done ? 1 : 0) : 1,
+      pot: h ? h.players.reduce((a, p) => a + p.total, 0) : 0,
+      op: o ? { tc: o.toCall, ck: o.canCheck ? 1 : 0, cr: o.canRaise ? 1 : 0, mn: o.minTo, mx: o.maxTo, bt: o.isBet ? 1 : 0 } : null,
+      se: t.seats.map((x, i) => { const p = inHand[i]; return { i: x.id, n: x.name, s: x.stack, b: p ? p.bet : 0, h: p ? 1 : 0, f: p && p.folded ? 1 : 0, a: p && p.allin ? 1 : 0, o: x.out ? 1 : 0 }; }),
+      lg: h ? h.log.slice(-5) : [],
+      ep: H.ep, ek: live ? H.ek : {},
+      rs: h && h.done && h.result ? { w: h.result.winners, sh: Object.fromEntries(Object.entries(h.result.shown).map(([k, v]) => [k, [v.hole.join(''), v.name]])) } : null,
+      v: H.ver = Math.max(H.ver + 1, Date.now()),
+    };
+    // keep the host's presence inside the room's 4 KiB limit
+    const size = () => new Blob([JSON.stringify(s)]).size;
+    while (size() > 3600 && s.lg.length) s.lg.shift();
+    return s;
+  };
+  H.publish = () => {
+    if (!table) return;
+    const s = H.publicState();
+    view = s;
+    table.presence({ pid: PID, n: nick(), k: myPub, so: mySitOut ? 1 : 0, s }).catch(() => {});
+    if (room) room.presence({ tb: { c: meta.code, n: meta.name, sb: t.sb, bb: t.bb, p: t.seats.length, m: meta.max } }).catch(() => {});
+  };
+  H.deal = async () => {
+    if (H.busy) return; H.busy = true;
+    try {
+      const present = H.players();
+      present.set(PID, { name: nick(), pub: myPub, sit: !mySitOut });
+      t.seats.forEach(s => { const p = present.get(s.id); s.out = !p || !p.sit; if (p) s.name = p.name; });
+      Poker.startHand(t, rnd);
+      const eph = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
+      H.ep = b64(await crypto.subtle.exportKey('raw', eph.publicKey));
+      H.ek = {};
+      for (const p of t.hand.players) { const s = t.seats[p.seat], pub = present.get(s.id).pub; H.ek[s.id] = await seal(eph.privateKey, pub, p.hole.join('')); }
+      H.nextAt = t.hand.done ? Date.now() + 6000 : 0;
+      $('dErr').textContent = '';
+    } catch (e) { $('dErr').textContent = e.message; }
+    H.busy = false;
+    H.changed();
+  };
+  H.act = (pid, type, amount, quiet) => {
+    const i = H.seatOf(pid); if (i < 0 || !t.hand || t.hand.done) return;
+    try { Poker.act(t, i, type, amount); } catch (e) { if (pid === PID) $('status').textContent = e.message; return; }
+    if (t.hand.done) H.nextAt = Date.now() + 6000;
+    if (!quiet) H.changed();
+  };
+  H.onPeers = () => {
+    const present = H.players(); let dirty = false;
+    for (const [pid, p] of present) {
+      if (pid === PID) continue;
+      let i = H.seatOf(pid);
+      if (i < 0 && meta.auto && t.seats.length < meta.max) { t.seats.push({ id: pid, name: p.name, stack: meta.stack, out: true }); i = t.seats.length - 1; dirty = true; t.hand && t.hand.log.push(`${p.name} นั่งลง ${fmt(meta.stack)}`); }
+      if (i >= 0 && t.seats[i].name !== p.name) { t.seats[i].name = p.name; dirty = true; }
+      const a = p.a;
+      if (a && typeof a === 'object' && a.h === (t.hand && t.hand.no) && +a.q > (H.lastQ[pid] || 0)) {
+        H.lastQ[pid] = +a.q; dirty = true;
+        if (['fold', 'check', 'call', 'raise'].includes(a.t)) H.act(pid, a.t, +a.x, true);
+      }
+    }
+    if (dirty) H.changed(); else renderAll();
+  };
+  H.tick = () => {
+    const now = Date.now();
+    if (t.hand && !t.hand.done) {
+      const o = Poker.options(t), id = o && t.seats[o.seat].id;
+      if (id && id !== PID && !H.players().has(id)) {
+        H.absentSince[id] = H.absentSince[id] || now;
+        if (now - H.absentSince[id] > 20000) { t.hand.log.push(`${t.seats[o.seat].name} ไม่อยู่ หมอบอัตโนมัติ`); H.act(id, 'fold'); }
+      } else if (id) delete H.absentSince[id];
+    } else if (H.nextAt && now >= H.nextAt && $('dAutoNext').checked) {
+      H.nextAt = 0;
+      const present = H.players(); present.set(PID, { sit: !mySitOut });
+      const ready = t.seats.filter(s => s.stack > 0 && present.has(s.id) && present.get(s.id).sit).length;
+      if (ready >= 2) H.deal(); else renderAll();
+    }
+  };
+  return H;
+}
+
+async function openTable(meta) {
+  code = meta.code;
+  const t = Poker.newTable({ sb: meta.sb, bb: meta.bb });
+  t.seats.push({ id: PID, name: nick(), stack: meta.stack, out: false });
+  host = makeHost(meta, t); host.save();
+  await joinTable(code);
+}
+async function resumeHost(c) {
+  let d; try { d = JSON.parse(store.get('pk-host-' + c)); } catch (e) { return; }
+  if (!d) return;
+  code = c; host = makeHost(d.meta, d.t);
+  if (host.t.hand && host.t.hand.done) host.nextAt = Date.now() + 4000;
+  await joinTable(c);
+}
+async function enter(c) {
+  c = String(c || '').trim().toLowerCase();
+  if (!/^[a-z0-9]{5}$/.test(c)) { $('joinErr').textContent = 'รหัสโต๊ะมี 5 ตัว ตัวอักษรอังกฤษกับตัวเลข'; return; }
+  if (store.get('pk-host-' + c)) return resumeHost(c);
+  host = null; code = c; await joinTable(c);
+}
+
+let unsubTable = null, tickTimer = 0, hostSeenAt = 0, mySitOut = false;
+async function joinTable(c) {
+  $('joinErr').textContent = '';
+  if (!room) return;
+  store.set('pk-name', nick());
+  try { table = await room.join('pk-' + c); }
+  catch (e) { $('joinErr').textContent = e && e.code === 'limit_reached' ? 'เปิดโต๊ะพร้อมกันเยอะเกินไป ออกจากโต๊ะอื่นก่อน' : 'เข้าโต๊ะไม่ได้ ลองอีกครั้ง'; return; }
+  store.set('pk-at', JSON.stringify({ code: c, host: !!host }));
+  try { history.replaceState(null, '', '#' + c); } catch (e) {}
+  $('lobby').hidden = true; $('game').hidden = false; $('gCode').textContent = c;
+  hostSeenAt = Date.now();
+  unsubTable = table.onPeers(onTablePeers, () => { $('gBanner').hidden = false; $('gBanner').textContent = 'หลุดจากโต๊ะ ลองออกแล้วเข้าใหม่'; });
+  if (host) { host.publish(); tickTimer = setInterval(() => { host && host.tick(); renderBanner(); }, 1000); }
+  else { myPresence(); tickTimer = setInterval(renderBanner, 1000); }
+  renderAll();
+}
+function myPresence(extra) {
+  if (!table) return;
+  if (host) return host.publish();
+  table.presence(Object.assign({ pid: PID, n: nick(), k: myPub, so: mySitOut ? 1 : 0 }, extra || {})).catch(() => {});
+}
+async function leaveTable() {
+  if (unsubTable) unsubTable(); unsubTable = null; clearInterval(tickTimer);
+  if (table) { try { await table.leave(); } catch (e) {} }
+  if (room && host) room.presence({ tb: null }).catch(() => {});
+  table = null; view = null; host = null; code = ''; myCards = null; myCardsFor = '';
+  store.del('pk-at');
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  $('game').hidden = true; $('lobby').hidden = false; renderHosted(); renderLobby();
+}
+
+function onTablePeers() {
+  if (host) return host.onPeers();
+  // follow the host: the peer whose presence carries the table state for this code
+  let best = null;
+  for (const p of table.peers()) { const s = p.presence && p.presence.s; if (s && s.c === code && (!best || (s.v || 0) > (best.v || 0) || !best)) best = s; }
+  if (best) { view = best; hostSeenAt = Date.now(); }
+  renderAll();
+}
+
+// ---------- my hole cards ----------
+let myCards = null, myCardsFor = '';
+async function decryptMine() {
+  if (!view || !view.ek || !view.ek[PID] || !view.ep) { if (view && view.dn && view.rs) return; myCards = view && !view.dn ? null : myCards; return; }
+  const key = view.hn + ':' + view.ek[PID];
+  if (myCardsFor === key) return;
+  myCardsFor = key;
+  try { const s = await unseal(myKeys.privateKey, view.ep, view.ek[PID]); myCards = [s.slice(0, 2), s.slice(2, 4)]; }
+  catch (e) { myCards = null; }
+  renderAll();
+}
+
+// ---------- rendering ----------
+function cardEl(c, cls) {
+  const d = document.createElement('div'); d.className = 'card' + (cls ? ' ' + cls : '');
+  if (!c) { d.classList.add('back'); return d; }
+  if (c === '-' || !/^[2-9TJQKA][shdc]$/.test(c)) { d.classList.add('empty'); return d; }
+  const r = c[0] === 'T' ? '10' : c[0], s = c[1];
+  if (s === 'h' || s === 'd') d.classList.add('red');
+  d.innerHTML = `<span>${r}<span class="s">${SUIT[s] || ''}</span></span>`;
+  d.setAttribute('aria-label', r + SUIT[s]);
+  return d;
+}
+const mySeat = () => view ? view.se.findIndex(s => s.i === PID) : -1;
+
+function renderBanner() {
+  const b = $('gBanner');
+  if (!view) { b.hidden = false; b.textContent = host ? 'กำลังเปิดโต๊ะ…' : 'กำลังรอเจ้ามือ ถ้ารอนาน แปลว่าคนเปิดโต๊ะยังไม่ได้เปิดหน้านี้ หรือรหัสไม่ถูก'; return; }
+  if (!host && Date.now() - hostSeenAt > 5000 && table && !table.peers().some(p => p.presence && p.presence.s && p.presence.s.c === code)) { b.hidden = false; b.textContent = 'เจ้ามือออกจากโต๊ะไปแล้ว เกมหยุดไว้จนกว่าเขาจะกลับมา'; return; }
+  b.hidden = true;
+}
+
+function renderAll() {
+  if ($('game').hidden) return;
+  decryptMine();
+  renderBanner();
+  const v = view;
+  $('gName').textContent = v ? v.nm : '';
+  $('gBlinds').textContent = v ? `บลายด์ ${fmt(v.sb)}/${fmt(v.bb)} · มือที่ ${v.hn}` : '';
+  // board
+  const board = $('board'); board.replaceChildren();
+  const bd = v ? v.bd : [];
+  const winCards = new Set();
+  if (v && v.rs && v.dn) { /* highlight nothing extra: hand names shown at seats */ }
+  for (let i = 0; i < 5; i++) board.append(cardEl(bd[i] || '-', winCards.has(bd[i]) ? 'hl' : ''));
+  const betsOut = v ? v.se.reduce((a, s) => a + s.b, 0) : 0;
+  $('pot').textContent = v ? `พอต ${fmt(v.pot)}` : 'พอต 0';
+  // status line
+  let st = '';
+  if (v) {
+    const me = mySeat();
+    if (v.dn) {
+      if (v.rs) { st = Object.entries(v.rs.w).map(([i, a]) => `${v.se[i] ? v.se[i].n : '?'} ได้ ${fmt(a)}`).join(' · '); }
+      else st = host ? 'กด “แจกมือใหม่” เมื่อทุกคนพร้อม' : 'รอเจ้ามือแจกไพ่';
+    } else if (v.ta >= 0) st = v.ta === me ? 'ตาคุณ' : `รอ ${v.se[v.ta].n}`;
+  }
+  $('status').textContent = st;
+  renderSeats(v);
+  renderMine(v);
+  renderLog(v);
+  renderDesk();
+}
+
+function renderSeats(v) {
+  const felt = $('felt');
+  felt.querySelectorAll('.seat').forEach(n => n.remove());
+  if (!v) return;
+  const n = v.se.length, me = mySeat(), base = me >= 0 ? me : 0;
+  const narrow = felt.clientWidth < 520;
+  v.se.forEach((s, i) => {
+    const k = ((i - base) % n + n) % n;
+    const ang = Math.PI / 2 + (2 * Math.PI * k) / Math.max(n, 2);
+    const x = 50 + Math.cos(ang) * (narrow ? 40 : 44), y = 50 + Math.sin(ang) * (narrow ? 43 : 41);
+    const el = document.createElement('div');
+    el.className = 'seat' + (i === v.ta && !v.dn ? ' turn' : '') + (s.f ? ' folded' : '') + (s.o && !s.h ? ' out' : '') + (i === me ? ' me' : '');
+    el.style.left = x + '%'; el.style.top = y + '%';
+    const hole = document.createElement('div'); hole.className = 'hole';
+    const shown = v.rs && v.rs.sh && v.rs.sh[i];
+    if (shown) { hole.append(cardEl(shown[0].slice(0, 2), 'sm'), cardEl(shown[0].slice(2, 4), 'sm')); }
+    else if (s.h && !s.f && i !== me) { hole.append(cardEl(null, 'sm'), cardEl(null, 'sm')); }
+    const plate = document.createElement('div'); plate.className = 'plate'; plate.style.position = 'relative';
+    const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = s.n;
+    const stk = document.createElement('div'); stk.className = 'stk'; stk.textContent = fmt(s.s);
+    plate.append(nm, stk);
+    if (i === v.btn && v.hn) { const d = document.createElement('div'); d.className = 'btn-dot'; d.textContent = 'D'; plate.append(d); }
+    el.append(hole, plate);
+    if (shown) { const hn = document.createElement('div'); hn.className = 'hand-name'; hn.textContent = shown[1]; el.append(hn); }
+    const won = v.rs && v.dn && v.rs.w[i];
+    let tag = '';
+    if (won) tag = 'ได้ ' + fmt(won); else if (s.a && !v.dn) tag = 'ออลอิน'; else if (s.f && !v.dn) tag = 'หมอบ'; else if (s.o && !s.h) tag = s.s > 0 ? 'รอมือหน้า' : 'ชิปหมด';
+    if (tag) { const t = document.createElement('div'); t.className = 'tag' + (won ? ' win' : ''); t.textContent = tag; el.append(t); }
+    if (s.b > 0 && !v.dn) { const b = document.createElement('div'); b.className = 'bet'; b.innerHTML = '<span class="chip"></span>'; b.append(fmt(s.b)); el.append(b); }
+    felt.append(el);
+  });
+}
+
+function renderMine(v) {
+  const mine = $('mine'); mine.replaceChildren();
+  const me = mySeat(), seat = v && me >= 0 ? v.se[me] : null;
+  const live = v && !v.dn;
+  if (seat && seat.h && myCards && (live || v.rs)) {
+    mine.append(cardEl(myCards[0]), cardEl(myCards[1]));
+    if (v.bd.length >= 3 && window.Poker) { try { const b = Poker.best(myCards.concat(v.bd)); const t = document.createElement('div'); t.className = 'eyebrow'; t.textContent = b.name; mine.append(t); } catch (e) {} }
+  } else if (seat && seat.h && live) {
+    const p = document.createElement('p'); p.className = 'note'; p.textContent = 'กำลังเปิดไพ่ของคุณ…'; mine.append(p);
+  } else {
+    const p = document.createElement('p'); p.className = 'note';
+    p.textContent = !v ? '' : me < 0 ? (host ? '' : 'คุณยังไม่ได้นั่ง รอเจ้ามือให้ที่นั่ง') : seat.s <= 0 ? 'ชิปหมดแล้ว ขอเจ้ามือเติมชิปได้' : live ? 'คุณไม่ได้อยู่ในมือนี้ รอมือถัดไป' : 'รอมือถัดไป';
+    mine.append(p);
+  }
+  // actions
+  const myTurn = v && live && v.ta === me && me >= 0 && v.op;
+  $('actions').hidden = !myTurn;
+  if (myTurn) {
+    const o = v.op;
+    $('aCall').textContent = o.ck ? 'เช็ค' : `คอล ${fmt(o.tc)}`;
+    $('raiseBox').hidden = !o.cr; $('aRaise').hidden = !o.cr;
+    if (o.cr) {
+      const sl = $('rSlider'), amt = $('rAmt');
+      if (sl.dataset.key !== v.hn + ':' + v.v) {
+        sl.dataset.key = v.hn + ':' + v.v;
+        sl.min = o.mn; sl.max = o.mx; sl.step = 1; amt.min = o.mn; amt.max = o.mx;
+        if (!(+amt.value >= o.mn && +amt.value <= o.mx) || amt.dataset.hn !== String(v.hn)) { amt.value = o.mn; sl.value = o.mn; amt.dataset.hn = v.hn; }
+      }
+      $('aRaise').textContent = (+amt.value >= o.mx ? 'ออลอิน ' : o.bt ? 'เบท ' : 'เรสเป็น ') + fmt(+amt.value);
+    }
+  }
+  // sit out / back
+  const ctl = $('seatCtl'); ctl.replaceChildren();
+  if (v && me >= 0) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-ghost';
+    b.textContent = mySitOut ? 'กลับมาเล่นมือถัดไป' : 'พักมือถัดไป';
+    b.onclick = () => { mySitOut = !mySitOut; myPresence(); renderAll(); };
+    const s = document.createElement('span'); s.className = 'muted'; s.textContent = mySitOut ? 'คุณจะไม่ได้รับไพ่จนกว่าจะกดกลับมา' : '';
+    ctl.append(b, s);
+  }
+}
+
+function renderLog(v) {
+  const box = $('log'); box.replaceChildren();
+  for (const l of (v ? v.lg : [])) { const d = document.createElement('div'); d.textContent = l; box.append(d); }
+}
+
+function sendAct(type) {
+  const v = view; if (!v || !v.op) return;
+  let amount = 0;
+  if (type === 'raise') { amount = Math.max(v.op.mn, Math.min(v.op.mx, Math.floor(+$('rAmt').value || 0))); }
+  if (host) return host.act(PID, type, amount);
+  lastAct = Math.max(Date.now(), lastAct + 1);
+  myPresence({ a: { h: v.hn, q: lastAct, t: type, x: amount } });
+  $('actions').hidden = true;
+}
+$('aFold').onclick = () => sendAct('fold');
+$('aCall').onclick = () => sendAct(view && view.op && view.op.ck ? 'check' : 'call');
+$('aRaise').onclick = () => sendAct('raise');
+$('rSlider').oninput = e => { $('rAmt').value = e.target.value; renderMine(view); };
+$('rAmt').oninput = e => { $('rSlider').value = e.target.value; renderMine(view); };
+document.querySelectorAll('.presets button').forEach(b => b.onclick = () => {
+  const v = view; if (!v || !v.op) return; const o = v.op;
+  const potAfterCall = v.pot + o.tc;
+  const to = { min: o.mn, half: v.cb + Math.floor(potAfterCall / 2), pot: v.cb + potAfterCall, all: o.mx }[b.dataset.p];
+  const x = Math.max(o.mn, Math.min(o.mx, to));
+  $('rAmt').value = x; $('rSlider').value = x; renderMine(v);
+});
+
+// ---------- host desk ----------
+function renderDesk() {
+  const desk = $('desk');
+  desk.hidden = !host; if (!host) return;
+  const t = host.t, live = t.hand && !t.hand.done, present = host.players();
+  present.set(PID, { name: nick(), sit: !mySitOut });
+  $('dNote').textContent = live ? 'กำลังเล่นมืออยู่ แก้ชิปได้หลังมือนี้จบ' : 'แก้ชิปของแต่ละคนได้ตอนนี้ ตัวเลขใหม่ใช้ตั้งแต่มือถัดไป';
+  $('dStart').disabled = live || host.busy;
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#dRows')) return; // don't wipe what the host is typing
+  const rows = $('dRows'); rows.replaceChildren();
+  t.seats.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    const n = document.createElement('td'); n.textContent = s.name + (s.id === PID ? ' (คุณ)' : '');
+    const pill = document.createElement('span'); pill.className = 'pill ' + (present.has(s.id) ? 'on' : 'off'); pill.textContent = present.has(s.id) ? (present.get(s.id).sit ? 'อยู่' : 'พัก') : 'ไม่อยู่';
+    n.append(' ', pill);
+    const st = document.createElement('td'); st.textContent = fmt(s.stack);
+    const ed = document.createElement('td'); const inp = document.createElement('input'); inp.type = 'number'; inp.min = 0; inp.value = s.stack; inp.id = 'stk-' + s.id; inp.disabled = live; inp.setAttribute('aria-label', 'ชิปของ ' + s.name);
+    const setBtn = document.createElement('button'); setBtn.type = 'button'; setBtn.className = 'mini'; setBtn.textContent = 'ตั้ง'; setBtn.disabled = live;
+    setBtn.onclick = () => { const x = Math.max(0, Math.floor(+inp.value || 0)); s.stack = x; t.hand && t.hand.log.push(`เจ้ามือตั้งชิป ${s.name} เป็น ${fmt(x)}`); host.changed(); };
+    const wrap = document.createElement('div'); wrap.className = 'row'; wrap.style.flexWrap = 'nowrap'; wrap.append(inp, setBtn); ed.append(wrap);
+    const ac = document.createElement('td');
+    const top = document.createElement('button'); top.type = 'button'; top.className = 'mini btn-ghost'; top.textContent = '+' + fmt(host.meta.stack); top.disabled = live; top.title = 'เติมชิป';
+    top.onclick = () => { s.stack += host.meta.stack; t.hand && t.hand.log.push(`เจ้ามือเติมชิปให้ ${s.name} ${fmt(host.meta.stack)}`); host.changed(); };
+    ac.append(top);
+    if (s.id !== PID) {
+      const kick = document.createElement('button'); kick.type = 'button'; kick.className = 'mini btn-ghost'; kick.textContent = 'ให้ลุก'; kick.disabled = live;
+      kick.onclick = () => { if (t.button >= i && t.button > 0) t.button--; t.seats.splice(i, 1); host.changed(); };
+      ac.append(' ', kick);
+    }
+    if (live && Poker.options(t) && Poker.options(t).seat === i && s.id !== PID) {
+      const ff = document.createElement('button'); ff.type = 'button'; ff.className = 'mini btn-red'; ff.textContent = 'บังคับหมอบ';
+      ff.onclick = () => { t.hand.log.push(`เจ้ามือให้ ${s.name} หมอบ`); host.act(s.id, 'fold'); };
+      ac.append(' ', ff);
+    }
+    tr.append(n, st, ed, ac); rows.append(tr);
+  });
+  // waiting players
+  const wait = $('dWait'); wait.replaceChildren();
+  const waiting = [...present].filter(([pid]) => host.seatOf(pid) < 0 && pid !== PID);
+  if (waiting.length) {
+    const h = document.createElement('div'); h.className = 'eyebrow'; h.textContent = 'รอที่นั่ง'; wait.append(h);
+    for (const [pid, p] of waiting) {
+      const row = document.createElement('div'); row.className = 'tbl-row';
+      const nm = document.createElement('div'); nm.textContent = p.name;
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = `ให้นั่ง (${fmt(host.meta.stack)})`; b.disabled = t.seats.length >= host.meta.max;
+      b.onclick = () => { t.seats.push({ id: pid, name: p.name, stack: host.meta.stack, out: true }); host.changed(); };
+      row.append(nm, b); wait.append(row);
+    }
+  }
+  if (document.activeElement && ['dSb', 'dBb', 'dStack'].includes(document.activeElement.id)) return;
+  $('dSb').value = t.sb; $('dBb').value = t.bb; $('dStack').value = host.meta.stack; $('dAuto').checked = !!host.meta.auto;
+}
+$('dStart').onclick = () => host && host.deal();
+$('dSave').onclick = () => {
+  if (!host) return;
+  const sb = Math.floor(+$('dSb').value), bb = Math.floor(+$('dBb').value), st = Math.floor(+$('dStack').value);
+  if (!(sb >= 1 && bb >= sb && st >= 1)) { $('dErr').textContent = 'บลายด์ใหญ่ต้องไม่น้อยกว่าบลายด์เล็ก และทุกช่องต้องมากกว่า 0'; return; }
+  $('dErr').textContent = '';
+  host.t.sb = sb; host.t.bb = bb; host.meta.sb = sb; host.meta.bb = bb; host.meta.stack = st; host.changed();
+};
+$('dAuto').onchange = e => { if (host) { host.meta.auto = e.target.checked; host.changed(); host.onPeers(); } };
+
+// ---------- lobby forms ----------
+$('createForm').onsubmit = async e => {
+  e.preventDefault();
+  const sb = Math.floor(+$('cSb').value), bb = Math.floor(+$('cBb').value), stack = Math.floor(+$('cStack').value);
+  if (!$('nick').value.trim()) { $('createErr').textContent = 'ใส่ชื่อที่จะแสดงบนโต๊ะก่อน'; $('nick').focus(); return; }
+  if (!(sb >= 1 && bb >= sb && stack >= bb)) { $('createErr').textContent = 'บลายด์ใหญ่ต้องไม่น้อยกว่าบลายด์เล็ก และชิปเริ่มต้นต้องมากกว่าบลายด์ใหญ่'; return; }
+  $('createErr').textContent = '';
+  await openTable({ code: rid(5), name: $('cName').value.trim().slice(0, 20) || 'โต๊ะโป๊กเกอร์', sb, bb, stack, max: +$('cMax').value, auto: $('cAuto').checked });
+};
+$('joinForm').onsubmit = e => {
+  e.preventDefault();
+  if (!$('nick').value.trim()) { $('joinErr').textContent = 'ใส่ชื่อที่จะแสดงบนโต๊ะก่อน'; $('nick').focus(); return; }
+  enter($('jCode').value);
+};
+$('leaveBtn').onclick = leaveTable;
+$('copyCode').onclick = async () => {
+  const link = inviteLink(code);
+  try {
+    if (navigator.share && matchMedia('(pointer:coarse)').matches) { await navigator.share({ title: 'มาเล่นโป๊กเกอร์กัน', text: 'เข้าโต๊ะ ' + code, url: link }); return; }
+    await navigator.clipboard.writeText(link); $('copyCode').textContent = 'คัดลอกแล้ว';
+  } catch (e) { $('copyCode').textContent = link; }
+  setTimeout(() => $('copyCode').textContent = 'คัดลอกลิงก์เชิญ', 2500);
+};
+window.addEventListener('hashchange', () => { const c = (location.hash || '').slice(1).toLowerCase(); if (/^[a-z0-9]{5}$/.test(c) && c !== code && !table) { $('jCode').value = c; if ($('nick').value.trim()) enter(c); } });
+window.addEventListener('resize', () => renderSeats(view));
+
+boot();
+})();
+</script>
+</body>
+</html>
